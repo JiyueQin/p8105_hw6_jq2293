@@ -5,3 +5,47 @@ date: "November 24, 2018"
 output: github_document
 ---
 
+```{r setup, include = FALSE}
+library(tidyverse)
+```
+
+# Problem 1
+
+This problem uses dataset about homicides in 50 large US cities.
+
+## import and tidy
+
+First, import the data from website and do some cleaning.
+
+```{r tidy, message = FALSE}
+homicide_data = read_csv("https://github.com/washingtonpost/data-homicides/raw/master/homicide-data.csv") %>% 
+  unite(city_state, city, state, sep = ",", remove = FALSE) %>% 
+  mutate(solved = ifelse(disposition == "Closed by arrest", TRUE, FALSE)) %>% 
+  filter(! city %in% c("Dallas","Phoenix","Kansas City") &
+           city_state != "Tulsa,AL") %>% 
+  mutate(victim_race = recode_factor(victim_race, White = "white", .default = "non-white"),
+         victim_age = as.numeric(victim_age))
+```
+
+The initial cleaning steps include:
+
+1. using `unite()` to add a new variable `city_state`.
+
+2. using `mutate()` to add a new variable `solved`.
+
+3. using `filter()` to remove observations in certain cities which lack inforation of victim race.
+
+4. using `mutate()` to modify `victim_race` into categories of white and non-white and convert `victim_age` into numeric variable.
+
+The resulting dataset `homicide_data` has `r nrow(homicide_data)` rows and `r ncol(homicide_data)` columns.
+
+Some key variables are:
+
+- `victim_race`: factor variable, white as reference.
+
+- `city_state`: character varibale, denotes the place of the crime.  
+
+- `lat` and `lon`: numeric variable, denotes the geo location of the crime.
+
+- `solved`: logical variable, `TRUE`denotes the crime is sloved, meaning closed by arrest.
+

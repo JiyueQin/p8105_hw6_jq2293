@@ -7,6 +7,7 @@ output: github_document
 
 ```{r setup, include = FALSE}
 library(tidyverse)
+library(modelr)
 theme_set(theme_bw())
 knitr::opts_chunk$set(dpi = 200, out.width = "90%")
 ```
@@ -140,3 +141,51 @@ race_estimate %>%
 From the plot, we can see Boston has the lowest odds ratio(less than 0.25), meaning in Boston, non-white victims are much less likely to have solved homicides compared to white victims.  Tampa, Birmingham and Durham have Top3 highest odds ratio, which are a bit higher than 1, meaning the probability of getting a solved homicide is similar between non-whites and whites.
 
 About half of the cities have confidence intervals smaller than 1, which indicates in these cities, race is a significant predictor of solved/unsolved homicide at 0.05 level.
+
+# Problem 2
+
+This problem uses dataset about children's birthweight.
+
+## import and tidy
+
+First, import the data and clean for modeling.
+
+```{r prep}
+birth_data = read_csv("data/birthweight.csv") %>% 
+  mutate(babysex = recode_factor(babysex, `1` = "male", `2` = "female"),
+         frace = recode_factor(frace, `1`= "White", `2` = "Black", `3` = "Asian",
+                               `4` = "Puerto Rican", `8` = "Other"),
+         malform = recode_factor(malform, `0` = "absent",`1` = "present"),
+         mrace = recode_factor(mrace, `1`= "White", `2` = "Black", `3` = "Asian", `4` = "Puerto Rican")) %>% 
+  select(-pnumlbw, -pnumsga)
+  
+
+skimr::skim(birth_data)
+```
+
+This dataset `birth_data` has `r nrow(birth_data)` rows and `r ncol(birth_data)` columns.
+
+After using `skimr::skim()`, no missing value is found. Also, all the values of `pnumlbw` and `pnumsga` are 0, which makes no sense for regression and are removed. Using `recode_factor()` to transform `babysex`, `frace`, `malform` and `mrace` into factors.
+
+## regression
+
+Propose a regression model for birthweight. This model may be based on a hypothesized structure for the factors that underly birthweight, on a data-driven model-building process, or a combination of the two. Describe your modeling process and show a plot of model residuals against fitted values – use add_predictions and add_residuals in making this plot.
+
+Here, multiple linear regression is adopted. Note, the distribution of birthweight is approximatly normal, which satisfies the assumption for statistical inference.
+
+```{r mlr}
+bwt_mlr_1 = lm(bwt ~ gaweeks + malform + smoken + wtgain, data = birth_data)
+summary(bwt_mlr_1)
+
+bwt_mlr_2 = lm(bwt ~ gaweeks + smoken + wtgain + bhead + blength + mrace , data = birth_data)
+summary(bwt_mlr_2)
+
+birth_data %>% 
+  add_residuals(bwt_mlr_2) %>% 
+  add_predictions(bwt_mlr_2) %>% 
+  ggplot(aes(x = pred, y = resid)) + 
+  geom_point(alpha = .3)
+```
+At first, It is hypothesied that `gaweeks`, `malform`, `smoken` and `wtgain` are predictors, but it turns out `malform` is not a significant predictor, and the $R^2$ is only 0.21, meaning the variance is accounted for other variables.
+
+Trying `gaweeks`, `smoken`, `wtgain`, `bhead`, `blength`, `mrace` as predictors, we can see each predictor is significant and adjusted $R^2$ is 0.71, pretty similar to crude $R^2$, meaning the set of predictors here is reasonable. So the second model is used here.

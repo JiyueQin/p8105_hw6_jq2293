@@ -49,7 +49,7 @@ Some key variables are:
 
 - `solved`: numeric variable(binary), 1 denotes the crime is sloved, meaning closed by arrest. Otherwise, take 0.
 
-## regression in Baltimore
+## regression for Baltimore
 
 Then, fit a logistic regression to the records in Baltimore. Outcome is resolved vs unresolved and predictors are victim age, sex and race. 
 
@@ -83,7 +83,37 @@ result = confint(fit_logit_Bal) %>%
 
 From the results of the regression, we can see age, sex and race are all significant predictors at 0.05 level.
 
-For solving homicides comparing non-white victims to white victims keeping all other variables fixed, the estimated odds ratio is `r round(result[4, 5], 3)`, the 95% confidence is (`r round(result[4, 6], 3)`, `r round(result[4, 7], 3)`).
+For solving homicides comparing non-white victims to white victims keeping all other variables fixed, the estimated odds ratio is `r round(result[4, 5], 3)`, the 95% confidence is (`r round(result[4, 6], 3)`, `r round(result[4, 7], 3)`). Here, odds ratio is computed using `exp()` to transform original estimate. Smae for the confidence interval.
 
 This indicates non-white victims are more likely to have unsolved homicides than white victims. 
+
+## regression for each city
+
+Run glm for each of the cities and compute estimated ORs and CIs.
+
+```{r reg_all, warning = FALSE, message = FALSE}
+summary_reg = function(dataset){
+  fit = glm(solved ~ victim_age + victim_sex + victim_race, data = dataset, family = binomial())
+  confint(fit) %>%
+  as.data.frame() %>%
+  mutate(term = row.names(.)) %>% 
+  full_join(., broom::tidy(fit), by = "term") %>% 
+  select(term, log_OR = estimate, lower_log_OR = "2.5 %", upper_log_OR = "97.5 %") %>% 
+  mutate(OR = exp(log_OR),
+         lower_OR = exp(lower_log_OR),
+         upper_OR = exp(upper_log_OR)) %>% 
+  filter(term == "victim_racenon-white")
+
+}
+
+race_estimate = homicide_data %>% 
+  group_by(city_state) %>% 
+  nest() %>% 
+  mutate(result = map(data, summary_reg)) %>% 
+  select(-data) %>% 
+  unnest() %>% 
+  select(-term)
+  
+ knitr::kable(head(race_estimate), digits = 3)
+```
 

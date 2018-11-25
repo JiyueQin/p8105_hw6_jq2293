@@ -169,17 +169,16 @@ After using `skimr::skim()`, no missing value is found. Also, all the values of 
 
 ## regression
 
-Propose a regression model for birthweight. This model may be based on a hypothesized structure for the factors that underly birthweight, on a data-driven model-building process, or a combination of the two. Describe your modeling process and show a plot of model residuals against fitted values – use add_predictions and add_residuals in making this plot.
-
 Here, multiple linear regression is adopted. Note, the distribution of birthweight is approximatly normal, which satisfies the assumption for statistical inference.
 
 ```{r mlr}
 bwt_mlr_1 = lm(bwt ~ gaweeks + malform + smoken + wtgain, data = birth_data)
-summary(bwt_mlr_1)
+broom::tidy(bwt_mlr_1)
+broom::glance(bwt_mlr_1)
 
 bwt_mlr_2 = lm(bwt ~ gaweeks + smoken + wtgain + bhead + blength + mrace , data = birth_data)
-summary(bwt_mlr_2)
-
+broom::tidy(bwt_mlr_2)
+broom::glance(bwt_mlr_2)
 
 birth_data %>% 
   add_residuals(bwt_mlr_2, var = "residual") %>% 
@@ -195,4 +194,17 @@ At first, It is hypothesied that `gaweeks`, `malform`, `smoken` and `wtgain` are
 
 Trying `gaweeks`, `smoken`, `wtgain`, `bhead`, `blength`, `mrace` as predictors, we can see each predictor is significant and adjusted $R^2$ is 0.71, pretty similar to crude $R^2$, meaning the set of predictors here is reasonable. So the second model is used here.
 
-In general, the plot shows that residuals are randomly scattered around 0, but three outliers are noticed. 
+In general, the plot shows that residuals are randomly scattered around 0, but three outliers can be noticed. 
+
+## cross validation
+One using length at birth and gestational age as predictors (main effects only)
+One using head circumference, length, sex, and all interactions (including the three-way interaction) between these
+Make this comparison in terms of the cross-validated prediction error; use crossv_mc and functions in purrr as appropriate.
+
+```{r validation}
+model_1 = lm(bwt ~ blength + gaweeks, data = birth_data)
+model_2 = lm(bwt ~ bhead + babysex + blength + bhead * babysex * blength, data = birth_data)
+
+set.seed(1)
+
+```

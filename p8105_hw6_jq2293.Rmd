@@ -161,7 +161,7 @@ birth_data = read_csv("data/birthweight.csv") %>%
   select(-pnumlbw, -pnumsga)
   
 
-skimr::skim(birth_data)
+skimr::skim(birth_data) %>% filter(stat == "missing")
 ```
 
 This dataset `birth_data` has `r nrow(birth_data)` rows and `r ncol(birth_data)` columns.

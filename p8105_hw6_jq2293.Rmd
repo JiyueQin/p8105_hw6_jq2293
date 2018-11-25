@@ -8,6 +8,7 @@ output: github_document
 ```{r setup, include = FALSE}
 library(tidyverse)
 library(modelr)
+library(mgcv)
 theme_set(theme_bw())
 knitr::opts_chunk$set(dpi = 200, out.width = "90%")
 ```
@@ -190,21 +191,42 @@ birth_data %>%
 
 ```
 
-At first, It is hypothesied that `gaweeks`, `malform`, `smoken` and `wtgain` are predictors, but it turns out `malform` is not a significant predictor, and the $R^2$ is only 0.21, meaning the variance is accounted for other variables.
+At first, It is hypothesied that `gaweeks`, `malform`, `smoken` and `wtgain` are predictors, but it turns out `malform` is not a significant predictor, and the R^2 is only 0.21, meaning the variance is accounted for other variables.
 
-Trying `gaweeks`, `smoken`, `wtgain`, `bhead`, `blength`, `mrace` as predictors, we can see each predictor is significant and adjusted $R^2$ is 0.71, pretty similar to crude $R^2$, meaning the set of predictors here is reasonable. So the second model is used here.
+Trying `gaweeks`, `smoken`, `wtgain`, `bhead`, `blength`, `mrace` as predictors, we can see each predictor is significant and adjusted R^2 is 0.71, pretty similar to crude R^2, meaning the set of predictors here is reasonable. So the second model is used here.
 
 In general, the plot shows that residuals are randomly scattered around 0, but three outliers can be noticed. 
 
 ## cross validation
-One using length at birth and gestational age as predictors (main effects only)
-One using head circumference, length, sex, and all interactions (including the three-way interaction) between these
-Make this comparison in terms of the cross-validated prediction error; use crossv_mc and functions in purrr as appropriate.
+
+Make comparison in terms of the cross-validated prediction error with another two models.
+
+- `model_1`: length at birth and gestational age as predictors.
+
+- `model_2`: head circumference, length, sex, and all interactions between these as predictors.
 
 ```{r validation}
-model_1 = lm(bwt ~ blength + gaweeks, data = birth_data)
-model_2 = lm(bwt ~ bhead + babysex + blength + bhead * babysex * blength, data = birth_data)
 
 set.seed(1)
 
+cv_df = crossv_mc(birth_data, 100) %>% 
+  mutate(model_1 = map(train, ~lm(bwt ~ blength + gaweeks, data = .x)),
+         model_2 = map(train, ~lm(bwt ~ bhead + babysex + blength + bhead * babysex * blength, data = .x)),
+         my_model = map(train, ~lm(bwt ~ gaweeks + smoken + wtgain + bhead + blength + mrace , data = .x))) %>% 
+  mutate(rmse_model_1 = map2(model_1, test, ~rmse(model = .x, data = .y)),
+         rmse_model_2 = map2(model_2, test, ~rmse(model = .x, data = .y)),
+         rmse_my_model = map2(my_model, test, ~rmse(model = .x, data = .y)))
+
+cv_df %>% 
+  select(starts_with("rmse")) %>% 
+  gather(key = model, value = rmse) %>% 
+  unnest() %>% 
+  mutate(model = str_replace(model, "rmse_", "")) %>% 
+  ggplot(aes(x = model, y = rmse, fill = model)) + 
+  geom_violin() +
+  labs(title = "the distribution of rmse in different models") +
+  theme(legend.position = "None") 
+
 ```
+
+From the plot, we can see my model has lowest distribution in rmse, while model_1 has the highest distribution of rmse. model_2 has similar performance compared to mine. In general, from the perspective of distribution of rmse, I will keep my original model.

@@ -7,6 +7,8 @@ output: github_document
 
 ```{r setup, include = FALSE}
 library(tidyverse)
+theme_set(theme_bw())
+knitr::opts_chunk$set(dpi = 200, out.width = "90%")
 ```
 
 # Problem 1
@@ -83,7 +85,7 @@ result = confint(fit_logit_Bal) %>%
 
 From the results of the regression, we can see age, sex and race are all significant predictors at 0.05 level.
 
-For solving homicides comparing non-white victims to white victims keeping all other variables fixed, the estimated odds ratio is `r round(result[4, 5], 3)`, the 95% confidence is (`r round(result[4, 6], 3)`, `r round(result[4, 7], 3)`). Here, odds ratio is computed using `exp()` to transform original estimate. Smae for the confidence interval.
+For solving homicides, comparing non-white victims to white victims keeping all other variables fixed, the estimated odds ratio is `r round(result[4, 5], 3)`, the 95% confidence is (`r round(result[4, 6], 3)`, `r round(result[4, 7], 3)`). Here, odds ratio is computed using `exp()` to transform original estimate. Smae for the confidence interval.
 
 This indicates non-white victims are more likely to have unsolved homicides than white victims. 
 
@@ -117,3 +119,24 @@ race_estimate = homicide_data %>%
  knitr::kable(head(race_estimate), digits = 3)
 ```
 
+## plot
+
+Finally, a plot is generated to visualize the adjusted odds ratios for non-white victims compared to white victims.
+
+```{r plot}
+race_estimate %>% 
+  ggplot(aes(x = forcats::fct_reorder(city_state, OR), color = city_state)) +
+  geom_point(aes(y = OR)) +
+  geom_errorbar(aes(ymin = lower_OR, ymax = upper_OR)) +
+  coord_flip() +
+  labs(x = "",
+       y = "estimated odds ratio",
+       title = "adjusted ORs of solving homicides in non-white victims vs whites in 50 cities",
+       caption = "error bar showing 95% confidence interval") + 
+  theme_bw(base_size = 8) +
+  theme(legend.position = "None")
+```
+
+From the plot, we can see Boston has the lowest odds ratio(less than 0.25), meaning in Boston, non-white victims are much less likely to have solved homicides compared to white victims.  Tampa, Birmingham and Durham have Top3 highest odds ratio, which are a bit higher than 1, meaning the probability of getting a solved homicide is similar between non-whites and whites.
+
+About half of the cities have confidence intervals smaller than 1, which indicates in these cities, race is a significant predictor of solved/unsolved homicide at 0.05 level.

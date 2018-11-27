@@ -139,7 +139,9 @@ race_estimate %>%
   theme(legend.position = "None")
 ```
 
-From the plot, we can see Boston has the lowest odds ratio(less than 0.25), meaning in Boston, non-white victims are much less likely to have solved homicides compared to white victims.  Tampa, Birmingham and Durham have Top3 highest odds ratio, which are a bit higher than 1, meaning the probability of getting a solved homicide is similar between non-whites and whites.
+From the plot, we can see Boston has the lowest odds ratio(less than 0.25), meaning in Boston, non-white victims are least likely to have solved homicides compared to white victims.  Tampa, Birmingham and Durham have Top3 highest odds ratio, which are a bit higher than 1, meaning the probability of getting a solved homicide is similar between non-whites and whites.
+
+Most cities have estimated odds ratio less than 1.0, showing the trend that non-white victims are less likely to have solved homicides compared to white victims.
 
 About half of the cities have confidence intervals smaller than 1, which indicates in these cities, race is a significant predictor of solved/unsolved homicide at 0.05 level.
 
@@ -186,6 +188,7 @@ birth_data %>%
   add_predictions(bwt_mlr_2) %>% 
   ggplot(aes(x = pred, y = residual)) + 
   geom_point(alpha = .3) +
+  geom_smooth(se = FALSE) +
   labs(x = "fitted values",
        title = "distribution of model residuals against fitted values") 
 
@@ -195,7 +198,7 @@ At first, It is hypothesied that `gaweeks`, `malform`, `smoken` and `wtgain` are
 
 Trying `gaweeks`, `smoken`, `wtgain`, `bhead`, `blength`, `mrace` as predictors, we can see each predictor is significant and adjusted R^2 is 0.71, pretty similar to crude R^2, meaning the set of predictors here is reasonable. So the second model is used here.
 
-In general, the plot shows that residuals are randomly scattered around 0, but three outliers can be noticed. 
+In general, the plot shows that residuals are randomly scattered around 0, but some outliers can be noticed, and it has high residuals in the area of low fitted values. 
 
 ## cross validation
 
@@ -229,4 +232,4 @@ cv_df %>%
 
 ```
 
-From the plot, we can see my model has lowest distribution in rmse, while model_1 has the highest distribution of rmse. model_2 has similar performance compared to mine. In general, from the perspective of distribution of rmse, I will keep my original model.
+From the plot, we can see my model has lowest distribution in rmse, while model_1 has the highest distribution of rmse. In general, from the perspective of distribution of rmse, I will keep my original model. But considering the interaction model's performance, it might be helpful to add interaction term in my model.
